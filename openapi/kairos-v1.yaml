@@ -1,0 +1,574 @@
+openapi: 3.0.2
+info:
+  title: Kairos Places of Worship API
+  version: 1.0.0
+  description: |
+    Public HTTP contract for the direct Kairos v1 API. Kairos finds places of
+    worship and returns a normalized provider-agnostic response shape.
+servers:
+  - url: /
+    description: Same host that serves the Kairos API.
+tags:
+  - name: Places
+    description: Public places-of-worship endpoints.
+paths:
+  /v1/places/nearest:
+    get:
+      tags: [Places]
+      summary: Find the nearest place of worship
+      operationId: getNearestPlace
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Lat'
+        - $ref: '#/components/parameters/Lon'
+        - $ref: '#/components/parameters/RadiusKm'
+        - $ref: '#/components/parameters/Religion'
+        - $ref: '#/components/parameters/Denomination'
+      responses:
+        '200':
+          description: Nearest matching place, or null when no match exists.
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            X-Monthly-Quota-Limit:
+              $ref: '#/components/headers/MonthlyQuotaLimit'
+            X-Monthly-Quota-Remaining:
+              $ref: '#/components/headers/MonthlyQuotaRemaining'
+            X-Monthly-Quota-Reset:
+              $ref: '#/components/headers/MonthlyQuotaReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NearestResponse'
+              examples:
+                nearestChurch:
+                  value:
+                    data:
+                      id: osm:node:123456
+                      name: Parroquia San Jose
+                      location:
+                        lat: 6.24
+                        lon: -75.58
+                      religion: christian
+                      denomination: catholic
+                      distance_m: 342.5
+                      source:
+                        provider: openstreetmap
+                        osm_type: node
+                        osm_id: 123456
+                    meta:
+                      radius_km_used: 10
+                noMatch:
+                  value:
+                    data: null
+                    meta:
+                      radius_km_used: 10
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/places/nearby:
+    get:
+      tags: [Places]
+      summary: List nearby places of worship
+      operationId: getNearbyPlaces
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/Lat'
+        - $ref: '#/components/parameters/Lon'
+        - $ref: '#/components/parameters/RadiusKm'
+        - $ref: '#/components/parameters/Religion'
+        - $ref: '#/components/parameters/Denomination'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Nearby matches ordered by distance.
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            X-Monthly-Quota-Limit:
+              $ref: '#/components/headers/MonthlyQuotaLimit'
+            X-Monthly-Quota-Remaining:
+              $ref: '#/components/headers/MonthlyQuotaRemaining'
+            X-Monthly-Quota-Reset:
+              $ref: '#/components/headers/MonthlyQuotaReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NearbyResponse'
+              examples:
+                nearbyMosques:
+                  value:
+                    data:
+                      - id: osm:way:987654
+                        name: Masjid Example
+                        location:
+                          lat: 6.251
+                          lon: -75.57
+                        religion: muslim
+                        denomination: sunni
+                        distance_m: 510.2
+                        source:
+                          provider: openstreetmap
+                          osm_type: way
+                          osm_id: 987654
+                    meta:
+                      radius_km_used: 5
+                      count: 1
+                      limit: 50
+                      offset: 0
+                noMatch:
+                  value:
+                    data: []
+                    meta:
+                      radius_km_used: 5
+                      count: 0
+                      limit: 50
+                      offset: 0
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/places/{id}:
+    get:
+      tags: [Places]
+      summary: Get one place by stable Kairos ID
+      operationId: getPlaceById
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Stable OpenStreetMap-backed public ID.
+          schema:
+            type: string
+            pattern: '^osm:(node|way|relation):[1-9][0-9]*$'
+          examples:
+            node:
+              value: osm:node:123456
+      responses:
+        '200':
+          description: Place found. distance_m is null because a by-id lookup has no origin.
+          headers:
+            X-RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            X-RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            X-RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            X-Monthly-Quota-Limit:
+              $ref: '#/components/headers/MonthlyQuotaLimit'
+            X-Monthly-Quota-Remaining:
+              $ref: '#/components/headers/MonthlyQuotaRemaining'
+            X-Monthly-Quota-Reset:
+              $ref: '#/components/headers/MonthlyQuotaReset'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceResponse'
+              examples:
+                byId:
+                  value:
+                    data:
+                      id: osm:node:123456
+                      name: Parroquia San Jose
+                      location:
+                        lat: 6.24
+                        lon: -75.58
+                      religion: christian
+                      denomination: catholic
+                      distance_m: null
+                      source:
+                        provider: openstreetmap
+                        osm_type: node
+                        osm_id: 123456
+        '400':
+          $ref: '#/components/responses/InvalidRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Direct Kairos commercial API key.
+  parameters:
+    Lat:
+      name: lat
+      in: query
+      required: true
+      schema:
+        type: number
+        format: double
+        minimum: -90
+        maximum: 90
+    Lon:
+      name: lon
+      in: query
+      required: true
+      schema:
+        type: number
+        format: double
+        minimum: -180
+        maximum: 180
+    RadiusKm:
+      name: radiusKm
+      in: query
+      required: false
+      description: Requested radius. Kairos resolves it to a 2/5/10/20 km bucket exposed as meta.radius_km_used.
+      schema:
+        type: number
+        format: double
+        minimum: 0
+        exclusiveMinimum: true
+        maximum: 20
+        default: 8
+    Religion:
+      name: religion
+      in: query
+      required: false
+      schema:
+        type: string
+        default: all
+        enum: [all, christian, muslim, jewish, hindu, buddhist, sikh, shinto, other]
+    Denomination:
+      name: denomination
+      in: query
+      required: false
+      description: Optional ASCII slug. Input is trimmed and normalized to lowercase by Kairos.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 64
+        pattern: '^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$'
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    Offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+  headers:
+    RateLimitLimit:
+      description: Maximum direct-key requests allowed in the active minute window.
+      schema:
+        type: integer
+        minimum: 1
+    RateLimitRemaining:
+      description: Remaining direct-key requests in the active minute window.
+      schema:
+        type: integer
+        minimum: 0
+    RateLimitReset:
+      description: Unix epoch seconds when the minute window resets.
+      schema:
+        type: integer
+        format: int64
+    MonthlyQuotaLimit:
+      description: Maximum direct-key requests allowed in the active UTC calendar month.
+      schema:
+        type: integer
+        minimum: 1
+        format: int64
+    MonthlyQuotaRemaining:
+      description: Remaining direct-key requests in the active UTC calendar month.
+      schema:
+        type: integer
+        minimum: 0
+        format: int64
+    MonthlyQuotaReset:
+      description: Unix epoch seconds at the start of the next UTC calendar month.
+      schema:
+        type: integer
+        format: int64
+  schemas:
+    Place:
+      type: object
+      additionalProperties: false
+      required: [id, name, location, religion, denomination, distance_m, source]
+      properties:
+        id:
+          type: string
+          pattern: '^osm:(node|way|relation):[1-9][0-9]*$'
+        name:
+          type: string
+          nullable: true
+        location:
+          type: object
+          additionalProperties: false
+          required: [lat, lon]
+          properties:
+            lat:
+              type: number
+              format: double
+            lon:
+              type: number
+              format: double
+        religion:
+          type: string
+          nullable: true
+        denomination:
+          type: string
+          nullable: true
+        distance_m:
+          type: number
+          format: double
+          nullable: true
+        source:
+          type: object
+          additionalProperties: false
+          required: [provider, osm_type, osm_id]
+          properties:
+            provider:
+              type: string
+              enum: [openstreetmap]
+            osm_type:
+              type: string
+              enum: [node, way, relation]
+            osm_id:
+              type: integer
+              format: int64
+              minimum: 1
+    NullablePlace:
+      type: object
+      nullable: true
+      allOf:
+        - $ref: '#/components/schemas/Place'
+    NearestResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          $ref: '#/components/schemas/NullablePlace'
+        meta:
+          type: object
+          additionalProperties: false
+          required: [radius_km_used]
+          properties:
+            radius_km_used:
+              type: integer
+              enum: [2, 5, 10, 20]
+    NearbyResponse:
+      type: object
+      additionalProperties: false
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Place'
+        meta:
+          type: object
+          additionalProperties: false
+          required: [radius_km_used, count, limit, offset]
+          properties:
+            radius_km_used:
+              type: integer
+              enum: [2, 5, 10, 20]
+            count:
+              type: integer
+              minimum: 0
+              description: Number of places in the current response page.
+            limit:
+              type: integer
+              minimum: 1
+              maximum: 200
+            offset:
+              type: integer
+              minimum: 0
+    PlaceResponse:
+      type: object
+      additionalProperties: false
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Place'
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+  responses:
+    InvalidRequest:
+      description: Invalid query or path parameter.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalidRequest:
+              value:
+                error:
+                  code: INVALID_REQUEST
+                  message: Invalid request
+    Unauthorized:
+      description: Missing, invalid, or revoked authentication.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            unauthorized:
+              value:
+                error:
+                  code: UNAUTHORIZED
+                  message: Authentication required
+    Forbidden:
+      description: Credential is valid in a different route or edge authorization context.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            forbidden:
+              value:
+                error:
+                  code: FORBIDDEN
+                  message: Access forbidden
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notFound:
+              value:
+                error:
+                  code: NOT_FOUND
+                  message: Resource not found
+    MethodNotAllowed:
+      description: Unsupported HTTP method. Kairos normalizes router 405 responses.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            methodNotAllowed:
+              value:
+                error:
+                  code: METHOD_NOT_ALLOWED
+                  message: Method not allowed
+    RateLimited:
+      description: Minute rate limit or monthly quota exhausted.
+      headers:
+        Retry-After:
+          description: Seconds until the limiting window resets.
+          schema:
+            type: integer
+            minimum: 1
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        X-RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+        X-Monthly-Quota-Limit:
+          $ref: '#/components/headers/MonthlyQuotaLimit'
+        X-Monthly-Quota-Remaining:
+          $ref: '#/components/headers/MonthlyQuotaRemaining'
+        X-Monthly-Quota-Reset:
+          $ref: '#/components/headers/MonthlyQuotaReset'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            minute:
+              value:
+                error:
+                  code: RATE_LIMIT_EXCEEDED
+                  message: Rate limit exceeded
+            monthly:
+              value:
+                error:
+                  code: MONTHLY_QUOTA_EXCEEDED
+                  message: Monthly quota exceeded
+    InternalError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            internal:
+              value:
+                error:
+                  code: INTERNAL_ERROR
+                  message: Internal server error
+    ServiceUnavailable:
+      description: Authentication storage or upstream dependency temporarily unavailable.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            serviceUnavailable:
+              value:
+                error:
+                  code: SERVICE_UNAVAILABLE
+                  message: Service temporarily unavailable
+            upstreamUnavailable:
+              value:
+                error:
+                  code: UPSTREAM_UNAVAILABLE
+                  message: Upstream temporarily unavailable
