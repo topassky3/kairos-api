@@ -7,21 +7,36 @@ if (!base || !apiKey) {
 }
 
 const url = new URL(`${base}/v1/places/nearby`);
-url.searchParams.set("lat", "6.2442");
-url.searchParams.set("lon", "-75.5812");
-url.searchParams.set("radiusKm", "8");
-url.searchParams.set("religion", "all");
-url.searchParams.set("limit", "10");
-url.searchParams.set("offset", "0");
+url.searchParams.set("lat", process.env.KAIROS_LAT ?? "6.2442");
+url.searchParams.set("lon", process.env.KAIROS_LON ?? "-75.5812");
+url.searchParams.set("radiusKm", process.env.KAIROS_RADIUS_KM ?? "8");
+url.searchParams.set("religion", process.env.KAIROS_RELIGION ?? "all");
+url.searchParams.set("limit", process.env.KAIROS_LIMIT ?? "10");
+url.searchParams.set("offset", process.env.KAIROS_OFFSET ?? "0");
 
-const response = await fetch(url, {
-  headers: { "X-API-Key": apiKey },
-});
-
-const body = await response.json();
-if (!response.ok) {
-  console.error(JSON.stringify(body, null, 2));
+let response;
+try {
+  response = await fetch(url, {
+    headers: { "X-API-Key": apiKey },
+  });
+} catch (error) {
+  console.error(`Could not reach Kairos: ${error.message}`);
   process.exit(1);
 }
 
-console.log(JSON.stringify(body, null, 2));
+const text = await response.text();
+let body;
+try {
+  body = JSON.parse(text);
+} catch {
+  body = text;
+}
+
+if (!response.ok) {
+  console.error(
+    typeof body === "string" ? body : JSON.stringify(body, null, 2),
+  );
+  process.exit(1);
+}
+
+console.log(typeof body === "string" ? body : JSON.stringify(body, null, 2));

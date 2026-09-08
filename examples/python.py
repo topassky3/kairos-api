@@ -2,6 +2,7 @@
 import json
 import os
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -13,10 +14,10 @@ if not base or not api_key:
 
 query = urllib.parse.urlencode(
     {
-        "lat": 6.2442,
-        "lon": -75.5812,
-        "radiusKm": 8,
-        "religion": "all",
+        "lat": os.environ.get("KAIROS_LAT", "6.2442"),
+        "lon": os.environ.get("KAIROS_LON", "-75.5812"),
+        "radiusKm": os.environ.get("KAIROS_RADIUS_KM", "8"),
+        "religion": os.environ.get("KAIROS_RELIGION", "all"),
     }
 )
 request = urllib.request.Request(
@@ -24,7 +25,18 @@ request = urllib.request.Request(
     headers={"X-API-Key": api_key},
 )
 
-with urllib.request.urlopen(request, timeout=20) as response:
-    payload = json.load(response)
+try:
+    with urllib.request.urlopen(request, timeout=20) as response:
+        payload = json.load(response)
+except urllib.error.HTTPError as error:
+    try:
+        payload = json.load(error)
+        print(json.dumps(payload, indent=2, ensure_ascii=False), file=sys.stderr)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        print(f"Kairos returned HTTP {error.code}", file=sys.stderr)
+    sys.exit(1)
+except urllib.error.URLError as error:
+    print(f"Could not reach Kairos: {error.reason}", file=sys.stderr)
+    sys.exit(1)
 
 print(json.dumps(payload, indent=2, ensure_ascii=False))
