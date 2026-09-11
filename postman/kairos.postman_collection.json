@@ -1,0 +1,267 @@
+{
+  "info": {
+    "_postman_id": "a8ed68db-0fd9-4c58-b82e-0d731b5f2b84",
+    "name": "Kairos Places of Worship API",
+    "description": "Public Postman collection for Kairos v1.\n\nDirect Kairos access uses the `X-API-Key` header. Set the `api_key` collection variable locally before sending requests. Do not commit real credentials.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{api_key}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://kairos.yarumaltech.com",
+      "type": "string"
+    },
+    {
+      "key": "api_key",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lat",
+      "value": "6.96333",
+      "type": "string"
+    },
+    {
+      "key": "lon",
+      "value": "-75.41722",
+      "type": "string"
+    },
+    {
+      "key": "radius_km",
+      "value": "8",
+      "type": "string"
+    },
+    {
+      "key": "religion",
+      "value": "all",
+      "type": "string"
+    },
+    {
+      "key": "denomination",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "limit",
+      "value": "10",
+      "type": "string"
+    },
+    {
+      "key": "offset",
+      "value": "0",
+      "type": "string"
+    },
+    {
+      "key": "place_id",
+      "value": "osm:way:164880258",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Find nearest place",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/places/nearest?lat={{lat}}&lon={{lon}}&radiusKm={{radius_km}}&religion={{religion}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "places",
+            "nearest"
+          ],
+          "query": [
+            {
+              "key": "lat",
+              "value": "{{lat}}"
+            },
+            {
+              "key": "lon",
+              "value": "{{lon}}"
+            },
+            {
+              "key": "radiusKm",
+              "value": "{{radius_km}}"
+            },
+            {
+              "key": "religion",
+              "value": "{{religion}}"
+            },
+            {
+              "key": "denomination",
+              "value": "{{denomination}}",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Return the nearest matching place of worship."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('JSON response', function () {",
+              "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+              "});",
+              "",
+              "pm.test('Nearest response has data and meta', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body).to.have.property('data');",
+              "    pm.expect(body).to.have.property('meta');",
+              "    pm.expect(body.meta).to.have.property('radius_km_used');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List nearby places",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/places/nearby?lat={{lat}}&lon={{lon}}&radiusKm={{radius_km}}&religion={{religion}}&limit={{limit}}&offset={{offset}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "places",
+            "nearby"
+          ],
+          "query": [
+            {
+              "key": "lat",
+              "value": "{{lat}}"
+            },
+            {
+              "key": "lon",
+              "value": "{{lon}}"
+            },
+            {
+              "key": "radiusKm",
+              "value": "{{radius_km}}"
+            },
+            {
+              "key": "religion",
+              "value": "{{religion}}"
+            },
+            {
+              "key": "denomination",
+              "value": "{{denomination}}",
+              "disabled": true
+            },
+            {
+              "key": "limit",
+              "value": "{{limit}}"
+            },
+            {
+              "key": "offset",
+              "value": "{{offset}}"
+            }
+          ]
+        },
+        "description": "Return nearby places ordered by distance."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Nearby response shape', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body.data).to.be.an('array');",
+              "    pm.expect(body.meta).to.have.property('radius_km_used');",
+              "    pm.expect(body.meta).to.have.property('count');",
+              "    pm.expect(body.meta).to.have.property('limit');",
+              "    pm.expect(body.meta).to.have.property('offset');",
+              "});",
+              "",
+              "if (pm.response.code === 200) {",
+              "    const body = pm.response.json();",
+              "    if (Array.isArray(body.data) && body.data.length > 0 && body.data[0].id) {",
+              "        pm.collectionVariables.set('place_id', body.data[0].id);",
+              "    }",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get place by ID",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v1/places/{{place_id}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "v1",
+            "places",
+            "{{place_id}}"
+          ]
+        },
+        "description": "Return one place by stable Kairos public ID. The nearby request updates `place_id` automatically when it returns at least one result."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Place response shape', function () {",
+              "    const body = pm.response.json();",
+              "    pm.expect(body).to.have.property('data');",
+              "    pm.expect(body.data).to.have.property('id');",
+              "    pm.expect(body.data).to.have.property('location');",
+              "    pm.expect(body.data.distance_m).to.eql(null);",
+              "});"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
