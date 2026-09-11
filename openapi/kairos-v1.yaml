@@ -6,8 +6,8 @@ info:
     Public HTTP contract for the direct Kairos v1 API. Kairos finds places of
     worship and returns a normalized provider-agnostic response shape.
 servers:
-  - url: /
-    description: Same host that serves the Kairos API.
+  - url: https://kairos.yarumaltech.com
+    description: Kairos production API.
 tags:
   - name: Places
     description: Public places-of-worship endpoints.
@@ -74,6 +74,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '429':
           $ref: '#/components/responses/RateLimited'
         '500':
@@ -150,6 +152,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '429':
           $ref: '#/components/responses/RateLimited'
         '500':
@@ -218,6 +222,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '405':
+          $ref: '#/components/responses/MethodNotAllowed'
         '429':
           $ref: '#/components/responses/RateLimited'
         '500':
